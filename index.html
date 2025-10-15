@@ -1,267 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI-Powered Hyderabad Bus Navigator</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invest for Farmers</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet" />
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+
     body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      height: 100vh;
+      background: radial-gradient(circle at 20% 30%, #00ff88, #0078ff, #000);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: #fff;
     }
-    .autocomplete-items div:hover {
-      background-color: #f0f4ff;
+
+    .container {
+      position: relative;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 25px;
+      padding: 50px 40px;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 0 40px rgba(0, 255, 136, 0.3);
+      animation: float 4s ease-in-out infinite;
     }
-    .autocomplete-active {
-      background-color: #4f46e5 !important;
-      color: white !important;
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-15px); }
     }
-    /* Simple fade-in animation */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+
+    h1 {
+      font-size: 2.3rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #00ffcc, #00aaff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: glowText 3s infinite;
     }
-    .animate-fadeIn {
-      animation: fadeIn 0.5s ease-out forwards;
+
+    @keyframes glowText {
+      0%, 100% { text-shadow: 0 0 10px #00ffcc; }
+      50% { text-shadow: 0 0 25px #00aaff; }
     }
-     /* Loading spinner */
-    .loader {
-      border: 4px solid #f3f3f3;
+
+    p {
+      font-size: 1rem;
+      color: #e0e0e0;
+      margin-bottom: 20px;
+    }
+
+    a {
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(90deg, #00ff88, #00aaff);
+      padding: 12px 30px;
+      border-radius: 30px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+      transition: all 0.3s ease;
+      display: inline-block;
+    }
+
+    a:hover {
+      transform: scale(1.1) rotate(2deg);
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.8);
+    }
+
+    .glow-circle {
+      position: absolute;
       border-radius: 50%;
-      border-top: 4px solid #4f46e5;
-      width: 40px;
-      height: 40px;
-      -webkit-animation: spin 1s linear infinite;
-      animation: spin 1s linear infinite;
+      filter: blur(80px);
+      opacity: 0.4;
+      animation: move 8s linear infinite;
     }
-    @-webkit-keyframes spin {
-      0% { -webkit-transform: rotate(0deg); }
-      100% { -webkit-transform: rotate(360deg); }
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+
+    .circle1 { width: 300px; height: 300px; background: #00ffcc; top: -100px; left: -100px; }
+    .circle2 { width: 250px; height: 250px; background: #0078ff; bottom: -80px; right: -80px; }
+
+    @keyframes move {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(40px, 30px); }
     }
   </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body>
+  <div class="circle1 glow-circle"></div>
+  <div class="circle2 glow-circle"></div>
 
-  <div class="w-full max-w-lg bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-6 md:p-8 space-y-6">
-    <div class="text-center">
-      <h1 class="text-3xl font-bold text-gray-900">AI Hyderabad Bus Navigator</h1>
-      <p class="text-gray-600 mt-2">Live route finding powered by AI.</p>
-    </div>
-
-    <!-- Form Inputs -->
-    <div class="space-y-4">
-      <!-- Starting Point -->
-      <div class="autocomplete-wrapper relative">
-        <i class="fa-solid fa-location-arrow absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-        <input id="fromInput" type="text" class="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-300 focus:border-indigo-500 outline-none transition" placeholder="Enter any starting point">
-      </div>
-
-      <!-- Swap Button -->
-      <div class="flex justify-center">
-        <button onclick="swapLocations()" class="p-2 rounded-full bg-gray-100 hover:bg-indigo-100 text-indigo-600 transition-transform transform hover:rotate-180 focus:outline-none focus:ring-2 focus:ring-indigo-400" aria-label="Swap Locations">
-          <i class="fa-solid fa-retweet fa-lg"></i>
-        </button>
-      </div>
-
-      <!-- Destination -->
-      <div class="autocomplete-wrapper relative">
-        <i class="fa-solid fa-map-marker-alt absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-        <input id="toInput" type="text" class="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-300 focus:border-indigo-500 outline-none transition" placeholder="Enter any destination">
-      </div>
-    </div>
-    
-    <!-- Find Button -->
-    <button id="findRouteBtn" onclick="findBus()" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-all transform hover:scale-105 shadow-lg flex items-center justify-center">
-      <i class="fa-solid fa-bus-simple mr-2"></i> Find Route
-    </button>
-    
-    <!-- Result Area -->
-    <div id="result" class="pt-4"></div>
-
-    <!-- Feedback Link -->
-    <div class="text-center mt-6 border-t border-gray-200 pt-4">
-        <a id="feedbackLink" href="#" class="text-sm text-gray-500 hover:text-indigo-600 hover:underline transition-colors">
-            <i class="fa-solid fa-comment-dots mr-1"></i> Send Feedback
-        </a>
-    </div>
+  <div class="container">
+    <h1>Invest for Farmers 🌾</h1>
+    <p>Support Indian farmers and be part of the future of agriculture.  
+       If you want to invest, message me on Instagram 👇</p>
+    <a href="https://www.instagram.com/u.ss999" target="_blank">
+      💬 Message @u.ss999
+    </a>
   </div>
-
-<script>
-    // List of major locations for autocomplete suggestions.
-    // The AI can find routes for locations NOT on this list.
-    const majorLocations = [
-      "Secunderabad", "Koti", "MGBS", "Mehdipatnam", "Charminar", "Uppal", 
-      "Dilsukhnagar", "LB Nagar", "Hitech City", "Gachibowli", "Kukatpally", 
-      "Miyapur", "Ameerpet", "Panjagutta", "Begumpet", "ECIL", "Afzalgunj",
-      "Airport (RGIA)", "Ramoji Film City", "Golconda Fort", "Jubilee Hills",
-      "Banjara Hills", "Tarnaka", "RTC X Roads", "Nampally"
-    ].sort();
-
-    function autocomplete(inp, arr) {
-      let currentFocus;
-      inp.addEventListener("input", function() {
-        let a, b, val = this.value;
-        closeAllLists();
-        if (!val) return false;
-        currentFocus = -1;
-        a = document.createElement("DIV");
-        a.className = "autocomplete-items absolute z-10 w-full bg-white rounded-xl shadow-lg border mt-2 max-h-60 overflow-y-auto";
-        this.parentNode.appendChild(a);
-        arr.forEach(item => {
-          if (item.toUpperCase().includes(val.toUpperCase())) {
-            b = document.createElement("DIV");
-            b.className = "p-3 cursor-pointer text-gray-700";
-            let matchIndex = item.toUpperCase().indexOf(val.toUpperCase());
-            b.innerHTML = item.substring(0, matchIndex) +
-                          `<strong class="text-indigo-600">${item.substring(matchIndex, matchIndex + val.length)}</strong>` +
-                          item.substring(matchIndex + val.length);
-            b.innerHTML += `<input type='hidden' value='${item}'>`;
-            b.addEventListener("click", function() {
-              inp.value = this.getElementsByTagName("input")[0].value;
-              closeAllLists();
-            });
-            a.appendChild(b);
-          }
-        });
-      });
-      inp.addEventListener("keydown", function(e) {
-        let x = this.parentNode.querySelector(".autocomplete-items");
-        if (x) x = x.getElementsByTagName("div");
-        if (e.keyCode == 40) { currentFocus++; addActive(x); } 
-        else if (e.keyCode == 38) { currentFocus--; addActive(x); } 
-        else if (e.keyCode == 13) {
-          e.preventDefault();
-          if (currentFocus > -1 && x) x[currentFocus].click();
-          else closeAllLists();
-        }
-      });
-      function addActive(x) {
-        if (!x || x.length === 0) return false;
-        removeActive(x);
-        currentFocus = (currentFocus + x.length) % x.length;
-        x[currentFocus].classList.add("autocomplete-active");
-        x[currentFocus].scrollIntoView({ block: 'nearest' });
-      }
-      function removeActive(x) {
-        if (!x) return;
-        for (let i = 0; i < x.length; i++) x[i].classList.remove("autocomplete-active");
-      }
-      function closeAllLists(elmnt) {
-        const items = document.getElementsByClassName("autocomplete-items");
-        for (let i = items.length - 1; i >= 0; i--) {
-          if (elmnt != items[i] && elmnt != inp) items[i].parentNode.removeChild(items[i]);
-        }
-      }
-      document.addEventListener("click", (e) => closeAllLists(e.target));
-    }
-
-    function swapLocations() {
-      const fromInput = document.getElementById("fromInput");
-      const toInput = document.getElementById("toInput");
-      [fromInput.value, toInput.value] = [toInput.value, fromInput.value];
-    }
-
-    async function findBus() {
-        const fromInput = document.getElementById("fromInput");
-        const toInput = document.getElementById("toInput");
-        const resultDiv = document.getElementById("result");
-        const findRouteBtn = document.getElementById("findRouteBtn");
-
-        const from = fromInput.value.trim();
-        const to = toInput.value.trim();
-        
-        const showError = (message) => {
-            resultDiv.innerHTML = `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg animate-fadeIn" role="alert"><p class="font-bold">Oops!</p><p>${message}</p></div>`;
-        };
-
-        if (!from || !to) {
-            showError("Please enter both a starting point and a destination.");
-            return;
-        }
-        if (from.toLowerCase() === to.toLowerCase()) {
-            showError("Start and end points cannot be the same.");
-            return;
-        }
-
-        // Show loading state
-        resultDiv.innerHTML = `<div class="flex flex-col items-center justify-center p-4 bg-indigo-50 rounded-xl">
-            <div class="loader"></div>
-            <p class="mt-4 text-indigo-700 font-semibold">Consulting live transport data...</p>
-        </div>`;
-        findRouteBtn.disabled = true;
-        findRouteBtn.classList.add('opacity-50', 'cursor-not-allowed');
-
-        const apiKey = ""; // API key will be automatically managed by the environment
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-        const systemPrompt = "You are a helpful assistant and an expert on the Hyderabad, India bus transport system. Provide the best, most efficient bus route. First, check for a direct route. If none exists, provide the best route with the fewest transfers (one or two at most). Be clear and concise. Format the output with clear steps. If you find a direct route, state it clearly. For transfer routes, use 'Step 1:' and 'Step 2:'. Do not add any extra conversation or pleasantries, just the route information.";
-        const userQuery = `Find the best bus route from ${from} to ${to} in Hyderabad.`;
-
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] },
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`API error: ${response.statusText}`);
-            }
-
-            const result = await response.json();
-            const candidate = result.candidates?.[0];
-
-            if (candidate && candidate.content?.parts?.[0]?.text) {
-                let routeText = candidate.content.parts[0].text;
-                // Simple formatting for display
-                routeText = routeText.replace(/\n/g, '<br>');
-                routeText = routeText.replace(/Step 1:/g, '<strong class="text-indigo-700">Step 1:</strong>');
-                routeText = routeText.replace(/Step 2:/g, '<strong class="text-indigo-700">Step 2:</strong>');
-                routeText = routeText.replace(/Step 3:/g, '<strong class="text-indigo-700">Step 3:</strong>');
-                routeText = routeText.replace(/Direct Route:/g, '<strong class="text-green-700">Direct Route:</strong>');
-
-                resultDiv.innerHTML = `<div class="bg-indigo-50 p-5 rounded-xl border-2 border-indigo-200 animate-fadeIn space-y-2 text-gray-800">${routeText}</div>`;
-            } else {
-                 showError("The AI could not find a route. This might be a very uncommon route or the locations may not be clear. Please try again with more specific locations.");
-            }
-        } catch (error) {
-            console.error("Error fetching route:", error);
-            showError("Could not connect to the live route service. Please check your connection and try again.");
-        } finally {
-            // Restore button state
-            findRouteBtn.disabled = false;
-            findRouteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-    }
-
-    function setupFeedbackLink() {
-        const feedbackLink = document.getElementById('feedbackLink');
-        // !!! IMPORTANT: Change this email to your own email address !!!
-        const email = 'youremail@example.com'; 
-        const subject = 'Feedback for AI Hyderabad Bus Navigator';
-        const body = `Hi there,\n\nI have some feedback regarding the AI Hyderabad Bus Navigator website:\n\n[Please type your feedback here]\n\nThanks,`;
-        
-        feedbackLink.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    }
-
-    window.onload = function() {
-        const fromInput = document.getElementById("fromInput");
-        const toInput = document.getElementById("toInput");
-        autocomplete(fromInput, majorLocations);
-        autocomplete(toInput, majorLocations);
-        setupFeedbackLink();
-    };
-</script>
 </body>
 </html>
-
