@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TSRTC Bus Route Finder</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Global styles for the body and background */
+    body {
+      font-family: 'Inter', sans-serif;
+      /* Background with a semi-transparent overlay for better readability of text */
+      background: linear-gradient(rgba(240, 248, 255, 0.7), rgba(240, 248, 255, 0.7)), url('https://placehold.co/1920x1080/ADD8E6/000000?text=Bus+Background+Image') no-repeat center center fixed;
+      background-size: cover; /* Ensures the image covers the entire background */
+      background-color: #e0f2f7; /* Fallback background color */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh; /* Minimum height to take full viewport height */
+      margin: 0;
+      padding: 20px; /* Padding around the container for smaller screens */
+      box-sizing: border-box; /* Include padding in element's total width and height */
+    }
+
+    /* Container for the main application content */
+    .container {
+      background-color: rgba(255, 255, 255, 0.95); /* Semi-transparent white background */
+      padding: 35px 45px;
+      border-radius: 18px; /* Rounded corners for a softer look */
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); /* Soft shadow for depth */
+      max-width: 480px; /* Maximum width for better readability on large screens */
+      width: 100%; /* Ensures responsiveness */
+      box-sizing: border-box;
+      position: relative; /* Needed for z-index of autocomplete dropdown */
+      animation: fadeIn 0.8s ease-out; /* Smooth fade-in animation */
+    }
+
+    /* Responsive adjustments for the container */
+    @media (max-width: 600px) {
+      .container {
+        padding: 25px 30px; /* Reduced padding on smaller screens */
+        margin: 10px; /* Small margin for spacing */
+      }
+    }
+
+    /* Styling for the main heading */
+    h2 {
+      margin-bottom: 25px;
+      text-align: center;
+      color: #1e3a5f; /* Dark blue color for the heading */
+      font-size: 28px;
+    }
+
+    /* Responsive font size for the heading */
+    @media (max-width: 600px) {
+      h2 {
+        font-size: 24px;
+      }
+    }
+
+    /* Styling for labels (e.g., "Starting Point", "Destination") */
+    label {
+      font-weight: bold;
+      color: #34495e; /* Darker grey-blue color */
+      margin-bottom: 8px;
+      display: block; /* Makes labels appear on their own line */
+    }
+
+    /* Wrapper for autocomplete inputs to position dropdown correctly */
+    .autocomplete-wrapper {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    /* Styling for input fields with autocomplete */
+    .autocomplete-input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border: 1px solid #cceeff; /* Light blue border */
+      border-radius: 10px; /* Rounded input corners */
+      box-sizing: border-box;
+      font-size: 16px;
+      background-color: #f9fcff; /* Very light blue background */
+      transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* Smooth transition on focus */
+    }
+
+    .autocomplete-input:focus {
+      border-color: #007bff; /* Blue border on focus */
+      box-shadow: 0 0 8px rgba(0, 123, 255, 0.2); /* Light blue shadow on focus */
+      outline: none; /* Remove default outline */
+    }
+
+    /* Styling for the autocomplete dropdown list */
+    .autocomplete-items {
+      position: absolute;
+      border: 1px solid #d4d4d4; /* Light grey border */
+      border-bottom: none;
+      border-top: none;
+      z-index: 99; /* Ensures dropdown appears above other elements */
+      top: 100%; /* Positions dropdown right below the input */
+      left: 0;
+      right: 0;
+      max-height: 200px; /* Limits height and enables scrolling */
+      overflow-y: auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Soft shadow for dropdown */
+      background-color: #fff; /* White background for items */
+    }
+
+    .autocomplete-items div {
+      padding: 10px;
+      cursor: pointer;
+      background-color: #fff;
+      border-bottom: 1px solid #d4d4d4; /* Separator between items */
+      transition: background-color 0.2s; /* Smooth background change on hover */
+    }
+
+    .autocomplete-items div:hover {
+      background-color: #e9e9e9; /* Light grey background on hover */
+    }
+
+    .autocomplete-active {
+      background-color: #007bff !important; /* Blue background for active (selected) item */
+      color: #ffffff; /* White text for active item */
+    }
+
+    /* Styling for the "Find Bus" button */
+    button {
+      width: 100%;
+      background-color: #007bff; /* Blue button background */
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background-color 0.3s ease-in-out, transform 0.1s ease-in-out; /* Smooth transitions for hover/active states */
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #0056b3; /* Darker blue on hover */
+      transform: translateY(-1px); /* Slight lift effect on hover */
+    }
+
+    button:active {
+      transform: translateY(0); /* Resets on click */
+    }
+
+    /* Styling for the result display area */
+    #result {
+      margin-top: 25px;
+      padding: 15px;
+      background-color: #e9f5ff; /* Light blue background for results */
+      border-radius: 10px;
+      font-weight: bold;
+      text-align: center;
+      color: #2d3436; /* Dark text color */
+      min-height: 50px; /* Minimum height to prevent layout shifts */
+      display: flex; /* Use flexbox for centering content vertically */
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #cceeff; /* Light blue border */
+      word-break: break-word; /* Allows long words to break and wrap */
+      line-height: 1.5; /* Improves readability for multi-line results */
+    }
+
+    /* Responsive font size for the result text */
+    @media (max-width: 600px) {
+      #result {
+        font-size: 14px;
+      }
+    }
+
+    /* Keyframe animation for fade-in effect */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Utility class for bold text */
+    .font-bold {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>TSRTC Bus Route Finder</h2>
+
+    <label for="fromInput">Starting Point:</label>
+    <div class="autocomplete-wrapper">
+      <input id="fromInput" type="text" class="autocomplete-input" placeholder="Start typing location..." required>
+      <input type="hidden" id="fromSelectedValue"> <!-- Hidden input to store the confirmed selected value -->
+    </div>
+
+    <label for="toInput">Destination:</label>
+    <div class="autocomplete-wrapper">
+      <input id="toInput" type="text" class="autocomplete-input" placeholder="Start typing location..." required>
+      <input type="hidden" id="toSelectedValue"> <!-- Hidden input to store the confirmed selected value -->
+    </div>
+
+    <button onclick="findBus()">Find Bus</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    // Comprehensive bus route data for Hyderabad
+    // This data is manually curated and might not be exhaustive or real-time.
+    // For a production-level app, integration with a live API would be necessary.
+    const busRoutes = {
+      // Core Hubs and Major Connections
+      "MGBS-Secunderabad": "8R, 107, 107J, 107T, 250", // Mahatma Gandhi Bus Station to Secunderabad
+      "Secunderabad-MGBS": "8R, 107, 107J, 107T, 250",
+      "Koti-Secunderabad": "8, 107, 107J, 107T, 250",
+      "Secunderabad-Koti": "8, 107, 107J, 107T, 250",
+      "Mehdipatnam-Koti": "65, 65A, 65M, 90, 119",
+      "Koti-Mehdipatnam": "65, 65A, 65M, 90, 119",
+      "Mehdipatnam-Secunderabad": "65M, 90",
+      "Secunderabad-Mehdipatnam": "65M, 90",
+      "Afzalgunj-Secunderabad": "1, 1C, 1N",
+      "Secunderabad-Afzalgunj": "1, 1C, 1N",
+      "Afzalgunj-Koti": "Walkable or Auto", // Very close
+      "Koti-Afzalgunj": "Walkable or Auto",
+
+      // East Hyderabad
+      "Uppal-Charminar": "113UC, 71A",
+      "Charminar-Uppal": "113UC, 71A",
+      "Uppal-Koti": "113, 113C, 113J",
+      "Koti-Uppal": "113, 113C, 113J",
+      "Dilsukhnagar-Koti": "104, 104D, 104J, 104M",
+      "Koti-Dilsukhnagar": "104, 104D, 104J, 104M",
+      "LB Nagar-Koti": "104, 104D, 104J, 104M",
+      "Koti-LB Nagar": "104, 104D, 104J, 104M",
+      "LB Nagar-Secunderabad": "107R",
+      "Secunderabad-LB Nagar": "107R",
+      "ECIL-Secunderabad": "16, 16A",
+      "Secunderabad-ECIL": "16, 16A",
+      "ECIL-Koti": "16R",
+      "Koti-ECIL": "16R",
+      "Hayathnagar-Koti": "203, 204",
+      "Koti-Hayathnagar": "203, 204",
+      "Aramghar-Uppal": "300",
+      "Uppal-Aramghar": "300",
+      "Nagole-Koti": "104R",
+      "Koti-Nagole": "104R",
+      "Saroornagar-Koti": "104G, 104V",
+      "Koti-Saroornagar": "104G, 104V",
+      "Amberpet-Koti": "90",
+      "Koti-Amberpet": "90",
+      "Malakpet-Koti": "104R (to Nagole, then Koti), 104 (to Koti)",
+      "Koti-Malakpet": "104R (to Nagole, then Koti), 104 (to Koti)",
+      "Santoshnagar-Koti": "104V",
+      "Koti-Santoshnagar": "104V",
+      "Champapet-Koti": "104S",
+      "Koti-Champapet": "104S",
+      "Chaderghat-MGBS": "Walkable",
+      "MGBS-Chaderghat": "Walkable",
+      "Bibinagar-Uppal": "277",
+      "Uppal-Bibinagar": "277",
+      "Ghatkesar-Uppal": "277G",
+      "Uppal-Ghatkesar": "277G",
+      "Peerzadiguda-Uppal": "Walkable or Auto",
+      "Uppal-Peerzadiguda": "Walkable or Auto",
+      "Boduppal-Uppal": "Walkable or Auto",
+      "Uppal-Boduppal": "Walkable or Auto",
+      "Warangal Highway-Uppal": "Bus via Warangal Highway",
+      "Uppal-Warangal Highway": "Bus via Warangal Highway",
+      "Chengicherla-Uppal": "277G (to Ghatkesar, then another bus)",
+      "Uppal-Chengicherla": "277G (to Ghatkesar, then another bus)",
+      "Medipally-Uppal": "Walkable/Auto",
+      "Uppal-Medipally": "Walkable/Auto",
+      "Pedda Amberpet-LB Nagar": "Walkable/Auto",
+      "LB Nagar-Pedda Amberpet": "Walkable/Auto",
+      "Kothapet-LB Nagar": "Walkable/Auto",
+      "LB Nagar-Kothapet": "Walkable/Auto",
+
+
+      // West Hyderabad
+      "Hitech City-Secunderabad": "10H, 127K",
+      "Secunderabad-Hitech City": "10H, 127K",
+      "Hitech City-Koti": "10H",
+      "Koti-Hitech City": "10H",
+      "Gachibowli-Mehdipatnam": "216, 216A",
+      "Mehdipatnam-Gachibowli": "216, 216A",
+      "Kukatpally-Secunderabad": "19K, 18, 225",
+      "Secunderabad-Kukatpally": "19K, 18, 225",
+      "Kukatpally-Koti": "19K",
+      "Koti-Kukatpally": "19K",
+      "Miyapur-Koti": "218, 226",
+      "Koti-Miyapur": "218, 226",
+      "Miyapur-Mehdipatnam": "220",
+      "Mehdipatnam-Miyapur": "220",
+      "KPHB-Mehdipatnam": "216K",
+      "Mehdipatnam-KPHB": "216K",
+      "Patancheru-Mehdipatnam": "219",
+      "Mehdipatnam-Patancheru": "219",
+      "Jubilee Hills-Koti": "9X, 10J",
+      "Koti-Jubilee Hills": "9X, 10J",
+      "Banjara Hills-Koti": "9K, 127K",
+      "Koti-Banjara Hills": "9K, 127K",
+      "Ameerpet-Koti": "127, 47",
+      "Koti-Ameerpet": "127, 47",
+      "Ameerpet-Dilsukhnagar": "127",
+      "Dilsukhnagar-Ameerpet": "127",
+      "Ameerpet-LB Nagar": "127H",
+      "LB Nagar-Ameerpet": "127H",
+      "Jubilee Hills Check Post-Hitech City": "127J",
+      "Hitech City-Jubilee Hills Check Post": "127J",
+      "Sanath Nagar-Secunderabad": "47N, 47S",
+      "Secunderabad-Sanath Nagar": "47N, 47S",
+      "Panjagutta-Ameerpet": "Walkable or Auto",
+      "Ameerpet-Panjagutta": "Walkable or Auto",
+      "SR Nagar-Ameerpet": "Walkable",
+      "Ameerpet-SR Nagar": "Walkable",
+      "Manikonda-Mehdipatnam": "216",
+      "Mehdipatnam-Manikonda": "216",
+      "Kondapur-Hitech City": "Walkable or Auto",
+      "Hitech City-Kondapur": "Walkable or Auto",
+      "Madhapur-Hitech City": "Walkable or Auto",
+      "Hitech City-Madhapur": "Walkable or Auto",
+      "Shilparamam-Hitech City": "Walkable or Auto", // General Shilparamam
+      "Hitech City-Shilparamam": "Walkable or Auto",
+      "Financial District-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Financial District": "Walkable or Auto",
+      "BHEL-Kukatpally": "Walkable or Auto",
+      "Kukatpally-BHEL": "Walkable or Auto",
+      "Lingampally-Kukatpally": "225, 225M",
+      "Kukatpally-Lingampally": "225, 225M",
+      "Lingampally-Mehdipatnam": "220, 220L, 220M",
+      "Mehdipatnam-Lingampally": "220, 220L, 220M",
+      "Chandanagar-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Chandanagar": "Walkable or Auto",
+      "Borabanda-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Borabanda": "Walkable or Auto",
+      "Erragadda-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Erragadda": "Walkable or Auto",
+      "Shaikpet-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Shaikpet": "Walkable or Auto",
+      "Tolichowki-Mehdipatnam": "Walkable or Auto",
+      "Mehdipatnam-Tolichowki": "Walkable or Auto",
+      "Narsingi-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Narsingi": "Walkable or Auto",
+      "Kollur-Gachibowli": "216A",
+      "Gachibowli-Kollur": "216A",
+      "Tellapur-Gachibowli": "222",
+      "Gachibowli-Tellapur": "222",
+      "Gandipet-Mehdipatnam": "216",
+      "Mehdipatnam-Gandipet": "216",
+      "Kokapet-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Kokapet": "Walkable or Auto",
+      "Wipro Circle-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Wipro Circle": "Walkable or Auto",
+      "Financial District-Mehdipatnam": "216",
+      "Mehdipatnam-Financial District": "216",
+      "DLF-Gachibowli": "Walkable or Auto",
+      "Gachibowli-DLF": "Walkable or Auto",
+      "JNTU-Kukatpally": "Walkable",
+      "Kukatpally-JNTU": "Walkable",
+      "Miyapur-JNTU": "Walkable or Auto",
+      "JNTU-Miyapur": "Walkable or Auto",
+      "Bachupally-Miyapur": "Walkable or Auto",
+      "Miyapur-Bachupally": "Walkable or Auto",
+      "Khajaguda-Mehdipatnam": "216, 216A",
+      "Mehdipatnam-Khajaguda": "216, 216A",
+      "Gachibowli-Kukatpally": "Many shared autos, or 216 (to Mehdipatnam) then 220 (to Kukatpally)",
+      "Kukatpally-Gachibowli": "Many shared autos, or 220 (to Mehdipatnam) then 216 (to Gachibowli)",
+      "Nizampet-Kukatpally": "Walkable/Auto",
+      "Kukatpally-Nizampet": "Walkable/Auto",
+      "JNTU-Hitech City": "Walkable/Auto or local buses",
+      "Hitech City-JNTU": "Walkable/Auto or local buses",
+      "Miyapur-Hitech City": "222",
+      "Hitech City-Miyapur": "222",
+      "Kothaguda-Hitech City": "Walkable/Auto",
+      "Hitech City-Kothaguda": "Walkable/Auto",
+      "Cyber Towers-Hitech City": "Walkable",
+      "Hitech City-Cyber Towers": "Walkable",
+      "Tolichowki-Jubilee Hills": "Walkable/Auto to Mehdipatnam, then 127K/9K",
+      "Jubilee Hills-Tolichowki": "127K/9K (to Mehdipatnam), then Walkable/Auto",
+      "Golkonda-Mehdipatnam": "89, 119",
+      "Mehdipatnam-Golkonda": "89, 119",
+      "Bandlaguda Jagir-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Bandlaguda Jagir": "Walkable or Auto",
+      "Appa Junction-Mehdipatnam": "216A, 220",
+      "Mehdipatnam-Appa Junction": "216A, 220",
+      "Gandipet Lake-Mehdipatnam": "216",
+      "Mehdipatnam-Gandipet Lake": "216",
+      "Himayat Sagar-Mehdipatnam": "216 (to Gandipet), then another bus",
+      "Mehdipatnam-Himayat Sagar": "216 (to Gandipet), then another bus",
+
+
+      // South Hyderabad
+      "Aramghar-Mehdipatnam": "300",
+      "Mehdipatnam-Aramghar": "300",
+      "Shamshabad-LB Nagar": "300L, 300G", // Airport connection
+      "LB Nagar-Shamshabad": "300L, 300G",
+      "Shamshabad-Mehdipatnam": "220, 220L, 220M",
+      "Mehdipatnam-Shamshabad": "220, 220L, 220M",
+      "Airport-Mehdipatnam": "220, 220L, 220M", // Rajiv Gandhi International Airport
+      "Mehdipatnam-Airport": "220, 220L, 220M",
+      "Airport-LB Nagar": "300L, 300G",
+      "LB Nagar-Airport": "300L, 300G",
+      "Airport-Secunderabad": "JBS Airport Bus (AC), or 10H (to Hitech City, then 10H to Secunderabad)", // Complex route, often multiple transfers
+      "Secunderabad-Airport": "JBS Airport Bus (AC), or 10H (to Hitech City, then 10H to Airport)",
+      "Rajendranagar-Mehdipatnam": "216, 216A, 220",
+      "Mehdipatnam-Rajendranagar": "216, 216A, 220",
+      "Attapur-Mehdipatnam": "216, 216A",
+      "Mehdipatnam-Attapur": "216, 216A",
+      "Attapur-LB Nagar": "300A",
+      "LB Nagar-Attapur": "300A",
+      "Barkas-Charminar": "2C",
+      "Charminar-Barkas": "2C",
+      "Chandrayangutta-Charminar": "8C",
+      "Charminar-Chandrayangutta": "8C",
+      "Falaknuma-Charminar": "73, 73M",
+      "Charminar-Falaknuma": "73, 73M",
+      "Zoological Park-Mehdipatnam": "7Z",
+      "Mehdipatnam-Zoological Park": "7Z",
+      "Old City-Charminar": "Walkable", // Generic for old city areas near Charminar
+      "Charminar-Old City": "Walkable",
+      "Lal Darwaza-Charminar": "Walkable or Auto",
+      "Charminar-Lal Darwaza": "Walkable or Auto",
+      "Puranapul-Charminar": "Walkable or Auto",
+      "Charminar-Puranapul": "Walkable or Auto",
+      "Yakutpura-Charminar": "Walkable or Auto",
+      "Charminar-Yakutpura": "Walkable or Auto",
+      "Purani Haveli-Charminar": "Walkable or Auto",
+      "Charminar-Purani Haveli": "Walkable or Auto",
+      "Dabeerpura-Charminar": "Walkable or Auto",
+      "Charminar-Dabeerpura": "Walkable or Auto",
+      "Chilkur-Mehdipatnam": "220C",
+      "Mehdipatnam-Chilkur": "220C",
+      "Mangalhat-Mehdipatnam": "Walkable or Auto",
+      "Mehdipatnam-Mangalhat": "Walkable or Auto",
+      "Gudimalkapur-Mehdipatnam": "119",
+      "Mehdipatnam-Gudimalkapur": "119",
+      "Jiyaguda-Mehdipatnam": "118",
+      "Mehdipatnam-Jiyaguda": "118",
+      "Chaderghat-Charminar": "Walkable",
+      "Charminar-Chaderghat": "Walkable",
+      "Hussainialam-Charminar": "Walkable/Auto",
+      "Charminar-Hussainialam": "Walkable/Auto",
+
+
+      // North Hyderabad
+      "Malkajgiri-Panjagutta": "25M",
+      "Panjagutta-Malkajgiri": "25M",
+      "Moula Ali-Secunderabad": "17R",
+      "Secunderabad-Moula Ali": "17R",
+      "Paradise-Secunderabad": "Walkable", // Close to Secunderabad Bus Station
+      "Secunderabad-Paradise": "Walkable",
+      "Paradise-Koti": "5, 5R",
+      "Koti-Paradise": "5, 5R",
+      "Bowenpally-Secunderabad": "Walkable or Auto",
+      "Secunderabad-Bowenpally": "Walkable or Auto",
+      "Trimulgherry-Secunderabad": "Walkable or Auto",
+      "Secunderabad-Trimulgherry": "Walkable or Auto",
+      "Jeedimetla-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Jeedimetla": "Walkable or Auto",
+      "Balanagar-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Balanagar": "Walkable or Auto",
+      "Ferozguda-Sanath Nagar": "Walkable or Auto",
+      "Sanath Nagar-Ferozguda": "Walkable or Auto",
+      "Erragadda-Ameerpet": "Walkable or Auto",
+      "Ameerpet-Erragadda": "Walkable or Auto",
+      "Moosapet-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Moosapet": "Walkable or Auto",
+      "HMT-Kukatpally": "Walkable or Auto",
+      "Kukatpally-HMT": "Walkable or Auto",
+      "Safilguda-Malkajgiri": "Walkable or Auto",
+      "Malkajgiri-Safilguda": "Walkable or Auto",
+      "Neredmet-Malkajgiri": "Walkable or Auto",
+      "Malkajgiri-Neredmet": "Walkable or Auto",
+      "Kompally-Secunderabad": "229",
+      "Secunderabad-Kompally": "229",
+      "Medchal-Kompally": "229A",
+      "Kompally-Medchal": "229A",
+      "Alwal-Secunderabad": "Walkable or Auto",
+      "Secunderabad-Alwal": "Walkable or Auto",
+      "Ramakrishnapuram-Secunderabad": "Walkable or Auto",
+      "Secunderabad-Ramakrishnapuram": "Walkable or Auto",
+      "Yapral-ECIL": "Walkable or Auto",
+      "ECIL-Yapral": "Walkable or Auto",
+      "Kompally-Medchal Highway": "Walkable or Auto",
+      "Medchal Highway-Kompally": "Walkable or Auto",
+      "Suchitra-Kompally": "Walkable or Auto",
+      "Kompally-Suchitra": "Walkable or Auto",
+      "Bowrampet-Gandimaisamma": "Walkable or Auto",
+      "Gandimaisamma-Bowrampet": "Walkable or Auto",
+      "Prakash Nagar-Begumpet": "Walkable or Auto",
+      "Begumpet-Prakash Nagar": "Walkable or Auto",
+      "Rasoolpura-Secunderabad": "Walkable or Auto",
+      "Secunderabad-Rasoolpura": "Walkable or Auto",
+      "Lalapet-Secunderabad": "Walkable/Auto",
+      "Secunderabad-Lalapet": "Walkable/Auto",
+      "Padmarao Nagar-Secunderabad": "Walkable/Auto",
+      "Secunderabad-Padmarao Nagar": "Walkable/Auto",
+      "Mettuguda-Tarnaka": "Walkable/Auto",
+      "Tarnaka-Mettuguda": "Walkable/Auto",
+      "Jamia Osmania-Tarnaka": "Walkable/Auto",
+      "Tarnaka-Jamia Osmania": "Walkable/Auto",
+      "Osmania University-Tarnaka": "Walkable/Auto",
+      "Tarnaka-Osmania University": "Walkable/Auto",
+
+
+      // Central / Tourist Attractions
+      "Charminar-MGBS": "Walkable or Auto", // Very close
+      "MGBS-Charminar": "Walkable or Auto",
+      "Charminar-Salar Jung Museum": "Walkable", // Very close
+      "Salar Jung Museum-Charminar": "Walkable",
+      "Charminar-Mehdipatnam": "65A, 63M",
+      "Mehdipatnam-Charminar": "65A, 63M",
+      "Golconda Fort-Mehdipatnam": "89, 119",
+      "Mehdipatnam-Golconda Fort": "89, 119",
+      "Birla Mandir-Lakdikapul": "Walkable or Auto",
+      "Lakdikapul-Birla Mandir": "Walkable or Auto",
+      "Hussain Sagar-Koti": "Walkable/Auto to Tank Bund, then 8, 107",
+      "Koti-Hussain Sagar": "8, 107 (to Tank Bund), then Walkable/Auto",
+      "Lumbini Park-Lakdikapul": "Walkable", // Very close
+      "Lakdikapul-Lumbini Park": "Walkable",
+      "Nehru Zoological Park-Koti": "7Z",
+      "Koti-Nehru Zoological Park": "7Z",
+      "Ramoji Film City-MGBS": "290R",
+      "MGBS-Ramoji Film City": "290R",
+      "Chowmahalla Palace-Charminar": "Walkable",
+      "Charminar-Chowmahalla Palace": "Walkable",
+      "Qutb Shahi Tombs-Golconda Fort": "Walkable or Auto",
+      "Golconda Fort-Qutb Shahi Tombs": "Walkable or Auto",
+      "RTC X Roads-Koti": "Walkable or Auto",
+      "Koti-RTC X Roads": "Walkable or Auto",
+      "RTC X Roads-Secunderabad": "5R, 17",
+      "Secunderabad-RTC X Roads": "5R, 17",
+      "Narayanaguda-Koti": "Walkable or Auto",
+      "Koti-Narayanaguda": "Walkable or Auto",
+      "Nampally-Koti": "Walkable or Auto (very close, main railway station to hub)",
+      "Koti-Nampally": "Walkable or Auto",
+      "Nampally-Mehdipatnam": "90L",
+      "Mehdipatnam-Nampally": "90L",
+      "Nampally-Secunderabad": "8R, 107 (via Koti/MGBS)", // Connection via hub
+      "Secunderabad-Nampally": "8R, 107 (via Koti/MGBS)", // Connection via hub
+      "Masab Tank-Mehdipatnam": "Walkable or Auto",
+      "Mehdipatnam-Masab Tank": "Walkable or Auto",
+      "Lakdikapul-Nampally": "Walkable",
+      "Nampally-Lakdikapul": "Walkable",
+      "Khairatabad-Lakdikapul": "Walkable or Auto",
+      "Lakdikapul-Khairatabad": "Walkable or Auto",
+      "Tank Bund-Nampally": "8, 107 (via Koti), then Walkable/Auto",
+      "Nampally-Tank Bund": "Walkable/Auto (to Koti), then 8, 107",
+      "Necklace Road-Koti": "Walkable/Auto to Tank Bund, then 8, 107",
+      "Koti-Necklace Road": "8, 107 (to Tank Bund), then Walkable/Auto",
+      "Punjagutta-Secunderabad": "5K, 47P",
+      "Secunderabad-Punjagutta": "5K, 47P",
+      "Punjagutta-Koti": "47",
+      "Koti-Punjagutta": "47",
+      "Begumpet-Secunderabad": "Walkable or Auto",
+      "Secunderabad-Begumpet": "Walkable or Auto",
+      "Begumpet-Ameerpet": "Walkable",
+      "Ameerpet-Begumpet": "Walkable",
+      "Begumpet-Panjagutta": "Walkable or Auto",
+      "Panjagutta-Begumpet": "Walkable or Auto",
+      "Gudimalkapur-Mehdipatnam": "119",
+      "Mehdipatnam-Gudimalkapur": "119",
+      "Jiyaguda-Mehdipatnam": "118",
+      "Mehdipatnam-Jiyaguda": "118",
+      "Attapur-Mehdipatnam": "216, 216A",
+      "Mehdipatnam-Attapur": "216, 216A",
+      "Rajendranagar-Mehdipatnam": "216, 216A, 220",
+      "Mehdipatnam-Rajendranagar": "216, 216A, 220",
+      "Airport-Mehdipatnam": "220, 220L, 220M", // Rajiv Gandhi International Airport
+      "Mehdipatnam-Airport": "220, 220L, 220M",
+      "Airport-LB Nagar": "300L, 300G",
+      "LB Nagar-Airport": "300L, 300G",
+      "Airport-Secunderabad": "10H (to Hitech City, then 10H to Secunderabad)", // Complex route, often multiple transfers
+      "Secunderabad-Airport": "10H (to Hitech City, then 10H to Airport)",
+      "Manikonda-Mehdipatnam": "216",
+      "Mehdipatnam-Manikonda": "216",
+      "Kondapur-Hitech City": "Walkable or Auto",
+      "Hitech City-Kondapur": "Walkable or Auto",
+      "Madhapur-Hitech City": "Walkable or Auto",
+      "Hitech City-Madhapur": "Walkable or Auto",
+      "Shilparamam (Hitech City)-Hitech City": "Walkable or Auto",
+      "Hitech City-Shilparamam (Hitech City)": "Walkable or Auto",
+      "Financial District-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Financial District": "Walkable or Auto",
+      "BHEL-Kukatpally": "Walkable or Auto",
+      "Kukatpally-BHEL": "Walkable or Auto",
+      "Lingampally-Kukatpally": "225, 225M",
+      "Kukatpally-Lingampally": "225, 225M",
+      "Lingampally-Mehdipatnam": "220, 220L, 220M",
+      "Mehdipatnam-Lingampally": "220, 220L, 220M",
+      "Chandanagar-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Chandanagar": "Walkable or Auto",
+      "Borabanda-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Borabanda": "Walkable or Auto",
+      "Erragadda-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Erragadda": "Walkable or Auto",
+      "Shaikpet-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Shaikpet": "Walkable or Auto",
+      "Tolichowki-Mehdipatnam": "Walkable or Auto",
+      "Mehdipatnam-Tolichowki": "Walkable or Auto",
+      "Narsingi-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Narsingi": "Walkable or Auto",
+      "Kollur-Gachibowli": "216A",
+      "Gachibowli-Kollur": "216A",
+      "Tellapur-Gachibowli": "222",
+      "Gachibowli-Tellapur": "222",
+      "Gandipet-Mehdipatnam": "216",
+      "Mehdipatnam-Gandipet": "216",
+      "Kokapet-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Kokapet": "Walkable or Auto",
+      "Wipro Circle-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Wipro Circle": "Walkable or Auto",
+      "Financial District-Mehdipatnam": "216",
+      "Mehdipatnam-Financial District": "216",
+      "DLF-Gachibowli": "Walkable or Auto",
+      "Gachibowli-DLF": "Walkable or Auto",
+      "JNTU-Kukatpally": "Walkable",
+      "Kukatpally-JNTU": "Walkable",
+      "Miyapur-JNTU": "Walkable or Auto",
+      "JNTU-Miyapur": "Walkable or Auto",
+      "Bachupally-Miyapur": "Walkable or Auto",
+      "Miyapur-Bachupally": "Walkable or Auto",
+      "Khajaguda-Mehdipatnam": "216, 216A",
+      "Mehdipatnam-Khajaguda": "216, 216A",
+      "Gachibowli-Kukatpally": "Many shared autos, or 216 (to Mehdipatnam) then 220 (to Kukatpally)",
+      "Kukatpally-Gachibowli": "Many shared autos, or 220 (to Mehdipatnam) then 216 (to Gachibowli)",
+      "Nizampet-Kukatpally": "Walkable/Auto",
+      "Kukatpally-Nizampet": "Walkable/Auto",
+      "JNTU-Hitech City": "Walkable/Auto or local buses",
+      "Hitech City-JNTU": "Walkable/Auto or local buses",
+      "Miyapur-Hitech City": "222",
+      "Hitech City-Miyapur": "222",
+      "Kothaguda-Hitech City": "Walkable/Auto",
+      "Hitech City-Kothaguda": "Walkable/Auto",
+      "Cyber Towers-Hitech City": "Walkable",
+      "Hitech City-Cyber Towers": "Walkable",
+      "Tolichowki-Jubilee Hills": "Walkable/Auto to Mehdipatnam, then 127K/9K",
+      "Jubilee Hills-Tolichowki": "127K/9K (to Mehdipatnam), then Walkable/Auto",
+      "Golkonda-Mehdipatnam": "89, 119",
+      "Mehdipatnam-Golkonda": "89, 119",
+      "Bandlaguda Jagir-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Bandlaguda Jagir": "Walkable or Auto",
+      "Appa Junction-Mehdipatnam": "216A, 220",
+      "Mehdipatnam-Appa Junction": "216A, 220",
+      "Gandipet Lake-Mehdipatnam": "216",
+      "Mehdipatnam-Gandipet Lake": "216",
+      "Himayat Sagar-Mehdipatnam": "216 (to Gandipet), then another bus",
+      "Mehdipatnam-Himayat Sagar": "216 (to Gandipet), then another bus",
+
+
+      // South Hyderabad
+      "Aramghar-Mehdipatnam": "300",
+      "Mehdipatnam-Aramghar": "300",
+      "Shamshabad-LB Nagar": "300L, 300G", // Airport connection
+      "LB Nagar-Shamshabad": "300L, 300G",
+      "Shamshabad-Mehdipatnam": "220, 220L, 220M",
+      "Mehdipatnam-Shamshabad": "220, 220L, 220M",
+      "Airport-Mehdipatnam": "220, 220L, 220M", // Rajiv Gandhi International Airport
+      "Mehdipatnam-Airport": "220, 220L, 220M",
+      "Airport-LB Nagar": "300L, 300G",
+      "LB Nagar-Airport": "300L, 300G",
+      "Airport-Secunderabad": "JBS Airport Bus (AC), or 10H (to Hitech City, then 10H to Secunderabad)", // Complex route, often multiple transfers
+      "Secunderabad-Airport": "JBS Airport Bus (AC), or 10H (to Hitech City, then 10H to Airport)",
+      "Rajendranagar-Mehdipatnam": "216, 216A, 220",
+      "Mehdipatnam-Rajendranagar": "216, 216A, 220",
+      "Attapur-Mehdipatnam": "216, 216A",
+      "Mehdipatnam-Attapur": "216, 216A",
+      "Attapur-LB Nagar": "300A",
+      "LB Nagar-Attapur": "300A",
+      "Barkas-Charminar": "2C",
+      "Charminar-Barkas": "2C",
+      "Chandrayangutta-Charminar": "8C",
+      "Charminar-Chandrayangutta": "8C",
+      "Falaknuma-Charminar": "73, 73M",
+      "Charminar-Falaknuma": "73, 73M",
+      "Zoological Park-Mehdipatnam": "7Z",
+      "Mehdipatnam-Zoological Park": "7Z",
+      "Old City-Charminar": "Walkable", // Generic for old city areas near Charminar
+      "Charminar-Old City": "Walkable",
+      "Lal Darwaza-Charminar": "Walkable or Auto",
+      "Charminar-Lal Darwaza": "Walkable or Auto",
+      "Puranapul-Charminar": "Walkable or Auto",
+      "Charminar-Puranapul": "Walkable or Auto",
+      "Yakutpura-Charminar": "Walkable or Auto",
+      "Charminar-Yakutpura": "Walkable or Auto",
+      "Purani Haveli-Charminar": "Walkable or Auto",
+      "Charminar-Purani Haveli": "Walkable or Auto",
+      "Dabeerpura-Charminar": "Walkable or Auto",
+      "Charminar-Dabeerpura": "Walkable or Auto",
+      "Chilkur-Mehdipatnam": "220C",
+      "Mehdipatnam-Chilkur": "220C",
+      "Mangalhat-Mehdipatnam": "Walkable or Auto",
+      "Mehdipatnam-Mangalhat": "Walkable or Auto",
+      "Gudimalkapur-Mehdipatnam": "119",
+      "Mehdipatnam-Gudimalkapur": "119",
+      "Jiyaguda-Mehdipatnam": "118",
+      "Mehdipatnam-Jiyaguda": "118",
+      "Chaderghat-Charminar": "Walkable",
+      "Charminar-Chaderghat": "Walkable",
+      "Hussainialam-Charminar": "Walkable/Auto",
+      "Charminar-Hussainialam": "Walkable/Auto",
+
+
+      // North Hyderabad
+      "Malkajgiri-Panjagutta": "25M",
+      "Panjagutta-Malkajgiri": "25M",
+      "Moula Ali-Secunderabad": "17R",
+      "Secunderabad-Moula Ali": "17R",
+      "Paradise-Secunderabad": "Walkable", // Close to Secunderabad Bus Station
+      "Secunderabad-Paradise": "Walkable",
+      "Paradise-Koti": "5, 5R",
+      "Koti-Paradise": "5, 5R",
+      "Bowenpally-Secunderabad": "Walkable or Auto",
+      "Secunderabad-Bowenpally": "Walkable or Auto",
+      "Trimulgherry-Secunderabad": "Walkable or Auto",
+      "Secunderabad-Trimulgherry": "Walkable or Auto",
+      "Jeedimetla-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Jeedimetla": "Walkable or Auto",
+      "Balanagar-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Balanagar": "Walkable or Auto",
+      "Ferozguda-Sanath Nagar": "Walkable or Auto",
+      "Sanath Nagar-Ferozguda": "Walkable or Auto",
+      "Erragadda-Ameerpet": "Walkable or Auto",
+      "Ameerpet-Erragadda": "Walkable or Auto",
+      "Moosapet-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Moosapet": "Walkable or Auto",
+      "HMT-Kukatpally": "Walkable or Auto",
+      "Kukatpally-HMT": "Walkable or Auto",
+      "Safilguda-Malkajgiri": "Walkable or Auto",
+      "Malkajgiri-Safilguda": "Walkable or Auto",
+      "Neredmet-Malkajgiri": "Walkable or Auto",
+      "Malkajgiri-Neredmet": "Walkable or Auto",
+      "Kompally-Secunderabad": "229",
+      "Secunderabad-Kompally": "229",
+      "Medchal-Kompally": "229A",
+      "Kompally-Medchal": "229A",
+      "Alwal-Secunderabad": "Walkable or Auto",
+      "Secunderabad-Alwal": "Walkable or Auto",
+      "Ramakrishnapuram-Secunderabad": "Walkable or Auto",
+      "Secunderabad-Ramakrishnapuram": "Walkable or Auto",
+      "Yapral-ECIL": "Walkable or Auto",
+      "ECIL-Yapral": "Walkable or Auto",
+      "Kompally-Medchal Highway": "Walkable or Auto",
+      "Medchal Highway-Kompally": "Walkable or Auto",
+      "Suchitra-Kompally": "Walkable or Auto",
+      "Kompally-Suchitra": "Walkable or Auto",
+      "Bowrampet-Gandimaisamma": "Walkable or Auto",
+      "Gandimaisamma-Bowrampet": "Walkable or Auto",
+      "Prakash Nagar-Begumpet": "Walkable or Auto",
+      "Begumpet-Prakash Nagar": "Walkable or Auto",
+      "Rasoolpura-Secunderabad": "Walkable or Auto",
+      "Secunderabad-Rasoolpura": "Walkable or Auto",
+      "Lalapet-Secunderabad": "Walkable/Auto",
+      "Secunderabad-Lalapet": "Walkable/Auto",
+      "Padmarao Nagar-Secunderabad": "Walkable/Auto",
+      "Secunderabad-Padmarao Nagar": "Walkable/Auto",
+      "Mettuguda-Tarnaka": "Walkable/Auto",
+      "Tarnaka-Mettuguda": "Walkable/Auto",
+      "Jamia Osmania-Tarnaka": "Walkable/Auto",
+      "Tarnaka-Jamia Osmania": "Walkable/Auto",
+      "Osmania University-Tarnaka": "Walkable/Auto",
+      "Tarnaka-Osmania University": "Walkable/Auto",
+
+
+      // Central / Tourist Attractions
+      "Charminar-MGBS": "Walkable or Auto", // Very close
+      "MGBS-Charminar": "Walkable or Auto",
+      "Charminar-Salar Jung Museum": "Walkable", // Very close
+      "Salar Jung Museum-Charminar": "Walkable",
+      "Charminar-Mehdipatnam": "65A, 63M",
+      "Mehdipatnam-Charminar": "65A, 63M",
+      "Golconda Fort-Mehdipatnam": "89, 119",
+      "Mehdipatnam-Golconda Fort": "89, 119",
+      "Birla Mandir-Lakdikapul": "Walkable or Auto",
+      "Lakdikapul-Birla Mandir": "Walkable or Auto",
+      "Hussain Sagar-Koti": "Walkable/Auto to Tank Bund, then 8, 107",
+      "Koti-Hussain Sagar": "8, 107 (to Tank Bund), then Walkable/Auto",
+      "Lumbini Park-Lakdikapul": "Walkable", // Very close
+      "Lakdikapul-Lumbini Park": "Walkable",
+      "Nehru Zoological Park-Koti": "7Z",
+      "Koti-Nehru Zoological Park": "7Z",
+      "Ramoji Film City-MGBS": "290R",
+      "MGBS-Ramoji Film City": "290R",
+      "Chowmahalla Palace-Charminar": "Walkable",
+      "Charminar-Chowmahalla Palace": "Walkable",
+      "Qutb Shahi Tombs-Golconda Fort": "Walkable or Auto",
+      "Golconda Fort-Qutb Shahi Tombs": "Walkable or Auto",
+      "RTC X Roads-Koti": "Walkable or Auto",
+      "Koti-RTC X Roads": "Walkable or Auto",
+      "RTC X Roads-Secunderabad": "5R, 17",
+      "Secunderabad-RTC X Roads": "5R, 17",
+      "Narayanaguda-Koti": "Walkable or Auto",
+      "Koti-Narayanaguda": "Walkable or Auto",
+      "Nampally-Koti": "Walkable or Auto (very close, main railway station to hub)",
+      "Koti-Nampally": "Walkable or Auto",
+      "Nampally-Mehdipatnam": "90L",
+      "Mehdipatnam-Nampally": "90L",
+      "Nampally-Secunderabad": "8R, 107 (via Koti/MGBS)", // Connection via hub
+      "Secunderabad-Nampally": "8R, 107 (via Koti/MGBS)", // Connection via hub
+      "Masab Tank-Mehdipatnam": "Walkable or Auto",
+      "Mehdipatnam-Masab Tank": "Walkable or Auto",
+      "Lakdikapul-Nampally": "Walkable",
+      "Nampally-Lakdikapul": "Walkable",
+      "Khairatabad-Lakdikapul": "Walkable or Auto",
+      "Lakdikapul-Khairatabad": "Walkable or Auto",
+      "Tank Bund-Nampally": "8, 107 (via Koti), then Walkable/Auto",
+      "Nampally-Tank Bund": "Walkable/Auto (to Koti), then 8, 107",
+      "Necklace Road-Koti": "Walkable/Auto to Tank Bund, then 8, 107",
+      "Koti-Necklace Road": "8, 107 (to Tank Bund), then Walkable/Auto",
+      "Punjagutta-Secunderabad": "5K, 47P",
+      "Secunderabad-Punjagutta": "5K, 47P",
+      "Punjagutta-Koti": "47",
+      "Koti-Punjagutta": "47",
+      "Begumpet-Secunderabad": "Walkable or Auto",
+      "Secunderabad-Begumpet": "Walkable or Auto",
+      "Begumpet-Ameerpet": "Walkable",
+      "Ameerpet-Begumpet": "Walkable",
+      "Begumpet-Panjagutta": "Walkable or Auto",
+      "Panjagutta-Begumpet": "Walkable or Auto",
+      "Gudimalkapur-Mehdipatnam": "119",
+      "Mehdipatnam-Gudimalkapur": "119",
+      "Jiyaguda-Mehdipatnam": "118",
+      "Mehdipatnam-Jiyaguda": "118",
+      "Attapur-Mehdipatnam": "216, 216A",
+      "Mehdipatnam-Attapur": "216, 216A",
+      "Rajendranagar-Mehdipatnam": "216, 216A, 220",
+      "Mehdipatnam-Rajendranagar": "216, 216A, 220",
+      "Airport-Mehdipatnam": "220, 220L, 220M", // Rajiv Gandhi International Airport
+      "Mehdipatnam-Airport": "220, 220L, 220M",
+      "Airport-LB Nagar": "300L, 300G",
+      "LB Nagar-Airport": "300L, 300G",
+      "Airport-Secunderabad": "10H (to Hitech City, then 10H to Secunderabad)", // Complex route, often multiple transfers
+      "Secunderabad-Airport": "10H (to Hitech City, then 10H to Airport)",
+      "Manikonda-Mehdipatnam": "216",
+      "Mehdipatnam-Manikonda": "216",
+      "Kondapur-Hitech City": "Walkable or Auto",
+      "Hitech City-Kondapur": "Walkable or Auto",
+      "Madhapur-Hitech City": "Walkable or Auto",
+      "Hitech City-Madhapur": "Walkable or Auto",
+      "Shilparamam (Hitech City)-Hitech City": "Walkable or Auto",
+      "Hitech City-Shilparamam (Hitech City)": "Walkable or Auto",
+      "Financial District-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Financial District": "Walkable or Auto",
+      "BHEL-Kukatpally": "Walkable or Auto",
+      "Kukatpally-BHEL": "Walkable or Auto",
+      "Lingampally-Kukatpally": "225, 225M",
+      "Kukatpally-Lingampally": "225, 225M",
+      "Lingampally-Mehdipatnam": "220, 220L, 220M",
+      "Mehdipatnam-Lingampally": "220, 220L, 220M",
+      "Chandanagar-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Chandanagar": "Walkable or Auto",
+      "Borabanda-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Borabanda": "Walkable or Auto",
+      "Erragadda-Kukatpally": "Walkable or Auto",
+      "Kukatpally-Erragadda": "Walkable or Auto",
+      "Shaikpet-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Shaikpet": "Walkable or Auto",
+      "Tolichowki-Mehdipatnam": "Walkable or Auto",
+      "Mehdipatnam-Tolichowki": "Walkable or Auto",
+      "Narsingi-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Narsingi": "Walkable or Auto",
+      "Kollur-Gachibowli": "216A",
+      "Gachibowli-Kollur": "216A",
+      "Tellapur-Gachibowli": "222",
+      "Gachibowli-Tellapur": "222",
+      "Gandipet-Mehdipatnam": "216",
+      "Mehdipatnam-Gandipet": "216",
+      "Kokapet-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Kokapet": "Walkable or Auto",
+      "Wipro Circle-Gachibowli": "Walkable or Auto",
+      "Gachibowli-Wipro Circle": "Walkable or Auto",
+      "Financial District-Mehdipatnam": "216",
+      "Mehdipatnam-Financial District": "216",
+      "DLF-Gachibowli": "Walkable or Auto",
+      "Gachibowli-DLF": "Walkable or Auto",
+      "JNTU-Kukatpally": "Walkable",
+      "Kukatpally-JNTU": "Walkable",
+      "Miyapur-JNTU": "Walkable or Auto",
+      "JNTU-Miyapur": "Walkable or Auto",
+      "Bachupally-Miyapur": "Walkable or Auto",
+      "Miyapur-Bachupally": "Walkable or Auto",
+      "Kompally-Medchal Highway": "Walkable or Auto",
+      "Medchal Highway-Kompally": "Walkable or Auto",
+      "Suchitra-Kompally": "Walkable or Auto",
+      "Kompally-Suchitra": "Walkable or Auto",
+      "Bowrampet-Gandimaisamma": "Walkable or Auto",
+      "Gandimaisamma-Bowrampet": "Walkable or Auto",
+      "Dhoolpet-Mehdipatnam": "Walkable or Auto",
+      "Mehdipatnam-Dhoolpet": "Walkable or Auto",
+      "Prakash Nagar-Begumpet": "Walkable or Auto",
+      "Begumpet-Prakash Nagar": "Walkable or Auto",
+      "Rasoolpura-Secunderabad": "Walkable or Auto",
+      "Secunderabad-Rasoolpura": "Walkable or Auto",
+      "Raj Bhavan Road-Khairatabad": "Walkable",
+      "Khairatabad-Raj Bhavan Road": "Walkable",
+      "MG Road-Secunderabad": "Walkable",
+      "Secunderabad-MG Road": "Walkable",
+      "SD Road-Secunderabad": "Walkable",
+      "Secunderabad-SD Road": "Walkable",
+      "Begum Bazar-Nampally": "Walkable/Auto",
+      "Nampally-Begum Bazar": "Walkable/Auto",
+      "Punjagutta-Khairatabad": "Walkable/Auto",
+      "Khairatabad-Punjagutta": "Walkable/Auto",
+      // Adding new routes for Aramghar to Ramoji Film City via Koti
+      "Aramghar-Koti": "95A", // Bus from Aramghar to Koti
+      "Koti-Ramoji Film City": "205B", // Bus from Koti to Ramoji Film City
+      "Ramoji Film City-Koti": "205B", // Reverse route
+      "Koti-Aramghar": "95A", // Reverse route
+    };
+
+    /**
+     * Cleans a bus route string to extract only the relevant bus numbers.
+     * Handles cases with descriptive text in parentheses or "Walkable/Auto".
+     * @param {string} routeString The original route string from the busRoutes object.
+     * @returns {string} Cleaned bus numbers or the original string if it's "Walkable/Auto".
+     */
+    function cleanBusNumber(routeString) {
+        if (!routeString) return '';
+
+        // If it's a non-bus instruction, return as is
+        if (routeString.includes("Walkable") || routeString.includes("Auto") || routeString.includes("Bus via")) {
+            return routeString;
+        }
+
+        // Regex to capture alphanumeric bus numbers, separated by commas and/or spaces.
+        // It looks for patterns like "104R", "216A", "220", "8R", "107".
+        const busNumberPattern = /[a-zA-Z0-9]+(?:,\s*[a-zA-Z0-9]+)*/g;
+        let matches = [];
+        let match;
+
+        // Use exec in a loop to find all occurrences of bus number patterns
+        while ((match = busNumberPattern.exec(routeString)) !== null) {
+            // Add the captured bus number string to our matches array
+            matches.push(match[0].trim());
+        }
+
+        // Filter out any potential empty strings and join them with ", "
+        const cleanedNumbers = matches.filter(num => num !== '').join(', ');
+
+        // If after cleaning, no bus numbers are found, return the original string trimmed,
+        // although with the current data structure, it should always find something.
+        return cleanedNumbers === '' ? routeString.trim() : cleanedNumbers;
+    }
+
+    /**
+     * Implements autocomplete functionality for input fields.
+     * @param {HTMLInputElement} inp The input element to attach autocomplete to.
+     * @param {HTMLInputElement} hiddenInput The hidden input to store the confirmed selected value.
+     * @param {string[]} arr The array of possible autocomplete suggestions.
+     */
+    function autocomplete(inp, hiddenInput, arr) {
+        let currentFocus; // Keeps track of the currently focused item in the dropdown
+
+        // Event listener for input changes (when user types)
+        inp.addEventListener("input", function(e) {
+            let a, b, i, val = this.value; // Current input value
+            closeAllLists(); // Close any already open autocomplete lists
+            if (!val) { // If input is empty, clear hidden input and exit
+                hiddenInput.value = "";
+                return false;
+            }
+            currentFocus = -1; // Reset focus
+            
+            // Create a DIV element for the autocomplete list
+            a = document.createElement("DIV");
+            a.setAttribute("id", this.id + "autocomplete-list");
+            a.setAttribute("class", "autocomplete-items");
+            this.parentNode.appendChild(a); // Add the list to the input's parent
+
+            // Loop through all possible suggestions
+            for (i = 0; i < arr.length; i++) {
+                /* Check if the item starts with the same letters as the text field value, case-insensitive:*/
+                if (arr[i].toUpperCase().startsWith(val.toUpperCase())) {
+                    // Create a DIV for each matching suggestion
+                    b = document.createElement("DIV");
+                    /* Make the matching letters bold:*/
+                    b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+                    b.innerHTML += arr[i].substr(val.length);
+                    // Add a hidden input to store the actual value
+                    b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+                    
+                    // Attach a click event listener to each suggestion item
+                    b.addEventListener("click", function(e) {
+                        /* Insert the value into the text field and hidden input:*/
+                        inp.value = this.getElementsByTagName("input")[0].value;
+                        hiddenInput.value = inp.value; // Update the hidden input
+                        closeAllLists(); // Close the autocomplete list
+                    });
+                    a.appendChild(b); // Add the suggestion item to the list
+                }
+            }
+        });
+
+        // Event listener for keyboard navigation (up, down, Enter keys)
+        inp.addEventListener("keydown", function(e) {
+            let x = document.getElementById(this.id + "autocomplete-list");
+            if (x) x = x.getElementsByTagName("div"); // Get all suggestion items
+            if (e.keyCode == 40) { // Down arrow key
+                currentFocus++; // Move focus down
+                addActive(x); // Apply active class
+            } else if (e.keyCode == 38) { // Up arrow key
+                currentFocus--; // Move focus up
+                addActive(x); // Apply active class
+            } else if (e.keyCode == 13) { // Enter key
+                e.preventDefault(); // Prevent form submission
+                if (currentFocus > -1) {
+                    if (x) x[currentFocus].click(); // Simulate click on the active item
+                } else { // If Enter is pressed without selecting from dropdown, use current value
+                    hiddenInput.value = inp.value;
+                    closeAllLists();
+                }
+            }
+        });
+
+        /**
+         * Adds the "autocomplete-active" class to an item and scrolls it into view.
+         * @param {HTMLCollection} x The collection of autocomplete suggestion DIVs.
+         */
+        function addActive(x) {
+            if (!x) return false;
+            removeActive(x); // Remove active class from any previously active item
+            if (currentFocus >= x.length) currentFocus = 0; // Wrap around to the beginning
+            if (currentFocus < 0) currentFocus = (x.length - 1); // Wrap around to the end
+            x[currentFocus].classList.add("autocomplete-active"); // Add active class
+            // Scroll the active element into view if it's not already
+            x[currentFocus].parentNode.scrollTop = x[currentFocus].offsetTop;
+        }
+
+        /**
+         * Removes the "autocomplete-active" class from all autocomplete items.
+         * @param {HTMLCollection} x The collection of autocomplete suggestion DIVs.
+         */
+        function removeActive(x) {
+            for (let i = 0; i < x.length; i++) {
+                x[i].classList.remove("autocomplete-active");
+            }
+        }
+
+        /**
+         * Closes all autocomplete lists in the document.
+         * @param {HTMLElement} elmnt The element that triggered the close (e.g., a click outside).
+         */
+        function closeAllLists(elmnt) {
+            let x = document.getElementsByClassName("autocomplete-items");
+            for (let i = 0; i < x.length; i++) {
+                if (elmnt != x[i] && elmnt != inp) { // Only close if not the current input or its list
+                    x[i].parentNode.removeChild(x[i]);
+                }
+            }
+        }
+
+        /* Execute a function when someone clicks in the document:*/
+        document.addEventListener("click", function (e) {
+            closeAllLists(e.target);
+            // If the user clicks outside the autocomplete and input, but the input has text,
+            // check if the typed value is a recognized location and update hidden input.
+            if (e.target !== inp && e.target !== hiddenInput) {
+                if (inp.value && hiddenInput.value === "") {
+                     if (arr.includes(inp.value.trim())) { // Check against the original array for valid locations
+                         hiddenInput.value = inp.value.trim();
+                     } else {
+                         hiddenInput.value = ""; // Clear if not a recognized location
+                         inp.value = ""; // Also clear the input field to prevent confusion
+                     }
+                }
+            }
+        });
+    }
+
+
+    /**
+     * Finds and displays the bus route between the starting point and destination.
+     */
+    function findBus() {
+        const from = document.getElementById("fromSelectedValue").value.trim();
+        const to = document.getElementById("toSelectedValue").value.trim();
+        const resultDiv = document.getElementById("result");
+        resultDiv.textContent = ""; // Clear previous results
+
+        // Validate that both input fields have values
+        if (!from || !to) {
+            resultDiv.textContent = "Please enter both starting point and destination.";
+            return;
+        }
+
+        // Normalize inputs for consistent lookup (e.g., remove extra spaces)
+        const normalizedFrom = from.replace(/\s+/g, ' ').trim();
+        const normalizedTo = to.replace(/\s+/g, ' ').trim();
+
+        // Check if entered locations are valid from our dataset
+        if (!uniqueLocations.includes(normalizedFrom)) {
+            resultDiv.textContent = `"${from}" is not a recognized starting point. Please choose from the autocomplete suggestions.`;
+            return;
+        }
+        if (!uniqueLocations.includes(normalizedTo)) {
+            resultDiv.textContent = `"${to}" is not a recognized destination. Please choose from the autocomplete suggestions.`;
+            return;
+        }
+
+
+        // 1. Try to find a direct route
+        let directRoute = busRoutes[`${normalizedFrom}-${normalizedTo}`] || busRoutes[`${normalizedTo}-${normalizedFrom}`];
+
+        if (directRoute) {
+            resultDiv.innerHTML = `Direct Bus: <span class="font-bold">${cleanBusNumber(directRoute)}</span>`;
+        } else {
+            // 2. If no direct route, try to find a one-stop route
+            let foundTransferRoute = false;
+            // Iterate through all unique locations as potential transfer points
+            for (const via of uniqueLocations) {
+                if (via === normalizedFrom || via === normalizedTo) continue; // A transfer point cannot be the start or end
+
+                const route1 = busRoutes[`${normalizedFrom}-${via}`]; // First leg: from -> via
+                const route2 = busRoutes[`${via}-${normalizedTo}`];     // Second leg: via -> to
+
+                // Also check reverse routes for both legs
+                const reverseRoute1 = busRoutes[`${via}-${normalizedFrom}`];
+                const reverseRoute2 = busRoutes[`${normalizedTo}-${via}`];
+
+                // If both legs of a potential transfer route exist
+                if ((route1 || reverseRoute1) && (route2 || reverseRoute2)) {
+                    const actualRoute1 = route1 || reverseRoute1;
+                    const actualRoute2 = route2 || reverseRoute2;
+                    
+                    // Clean the bus numbers for display
+                    const displayRoute1 = cleanBusNumber(actualRoute1);
+                    const displayRoute2 = cleanBusNumber(actualRoute2);
+
+                    // Display the transfer route clearly
+                    resultDiv.innerHTML = `You can take Bus(es) <span class="font-bold">${displayRoute1}</span> from <span class="font-bold">${normalizedFrom}</span> to <span class="font-bold">${via}</span>.<br><br>Then take Bus(es) <span class="font-bold">${displayRoute2}</span> from <span class="font-bold">${via}</span> to <span class="font-bold">${normalizedTo}</span>.`;
+                    foundTransferRoute = true;
+                    break; // Found a one-stop route, no need to check further
+                }
+            }
+
+            // 3. If no direct or one-stop route found
+            if (!foundTransferRoute) {
+                resultDiv.textContent = `No direct or one-stop bus route found from "${normalizedFrom}" to "${normalizedTo}". You may need to use multiple transfers or consider other modes of transport (e.g., auto, metro).`;
+            }
+        }
+    }
+
+    // Data for autocomplete (extracts all unique locations from the busRoutes keys)
+    const allLocations = Object.keys(busRoutes).flatMap(key => key.split('-')).map(loc => loc.trim());
+    const uniqueLocations = [...new Set(allLocations)].sort(); // Get unique locations and sort them alphabetically
+
+    // Initialize autocomplete for both input fields when the window loads
+    window.onload = function() {
+        const fromInput = document.getElementById("fromInput");
+        const fromSelectedValue = document.getElementById("fromSelectedValue");
+        const toInput = document.getElementById("toInput");
+        const toSelectedValue = document.getElementById("toSelectedValue");
+
+        // Attach autocomplete to the "Starting Point" input
+        autocomplete(fromInput, fromSelectedValue, uniqueLocations);
+        // Attach autocomplete to the "Destination" input
+        autocomplete(toInput, toSelectedValue, uniqueLocations);
+
+        // Add blur event listeners to ensure hidden inputs are updated even if a selection
+        // is not explicitly made from the dropdown, but a valid location is typed.
+        fromInput.addEventListener("blur", function() {
+            if (fromInput.value && fromSelectedValue.value === "") {
+                if (uniqueLocations.includes(fromInput.value.trim())) {
+                    fromSelectedValue.value = fromInput.value.trim();
+                } else {
+                    fromSelectedValue.value = ""; // Clear if not a recognized location
+                    fromInput.value = ""; // Also clear the input field to prevent confusion
+                }
+            }
+        });
+
+        toInput.addEventListener("blur", function() {
+            if (toInput.value && toSelectedValue.value === "") {
+                if (uniqueLocations.includes(toInput.value.trim())) {
+                    toSelectedValue.value = toInput.value.trim();
+                } else {
+                    toSelectedValue.value = ""; // Clear if not a recognized location
+                    toInput.value = ""; // Also clear the input field to prevent confusion
+                }
+            }
+        });
+    };
+  </script>
+</body>
+</html>
